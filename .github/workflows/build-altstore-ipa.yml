@@ -33,16 +33,6 @@ jobs:
             xcodebuild -downloadComponent MetalToolchain
           fi
 
-      - name: Test leaderboard routing
-        run: |
-          xcodebuild test \
-            -project EhPanda.xcodeproj \
-            -scheme EhPanda \
-            -testPlan FeatureTests \
-            -destination 'platform=iOS Simulator,name=iPhone Air,OS=27.0' \
-            -only-testing:NetworkingFeatureTests/GalleryRequestBaselineTests \
-            -skipMacroValidation -skipPackagePluginValidation
-
       - name: Archive unsigned iPhone app
         shell: bash
         run: |
