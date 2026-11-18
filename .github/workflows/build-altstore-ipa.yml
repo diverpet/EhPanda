@@ -12,12 +12,12 @@ jobs:
     timeout-minutes: 60
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
-      SOURCE_SHA: 5752651cfb44d71be456fdd30810759160b6fee8
+      SOURCE_SHA: 82728825476b44e1ff3f3bef0b473b427b2617f3
     steps:
       - name: Checkout pinned upstream source
         uses: actions/checkout@v7
         with:
-          repository: EhPanda-Team/EhPanda
+          repository: diverpet/EhPanda
           ref: ${{ env.SOURCE_SHA }}
           persist-credentials: false
 
@@ -32,6 +32,16 @@ jobs:
           if ! xcrun --sdk iphoneos metal --version; then
             xcodebuild -downloadComponent MetalToolchain
           fi
+
+      - name: Test leaderboard routing
+        run: |
+          xcodebuild test \
+            -project EhPanda.xcodeproj \
+            -scheme EhPanda \
+            -testPlan FeatureTests \
+            -destination 'platform=iOS Simulator,name=iPhone Air,OS=27.0' \
+            -only-testing:NetworkingFeatureTests/GalleryRequestBaselineTests \
+            -skipMacroValidation -skipPackagePluginValidation
 
       - name: Archive unsigned iPhone app
         shell: bash
@@ -78,8 +88,8 @@ jobs:
           for p in app.rglob('Info.plist'):
               plistlib.loads(p.read_bytes())
           provenance = {
-              'repository': 'https://github.com/EhPanda-Team/EhPanda',
-              'branch': 'feature/gsd-phase-17',
+              'repository': 'https://github.com/diverpet/EhPanda',
+              'branch': 'codex/toplists-eh-fallback',
               'sourceCommit': os.environ['SOURCE_SHA'],
               'version': info['CFBundleShortVersionString'],
               'build': info['CFBundleVersion'],
@@ -94,15 +104,15 @@ jobs:
           output.write_text(json.dumps(provenance, indent=2) + '\n')
           PY
           cd "$IPA_OUTPUT_DIR"
-          zip -qry "$RUNNER_TEMP/EhPandaOutput/EhPanda-dev-5752651c.ipa" Payload
-          unzip -tq "$RUNNER_TEMP/EhPandaOutput/EhPanda-dev-5752651c.ipa"
+          zip -qry "$RUNNER_TEMP/EhPandaOutput/EhPanda-dev-82728825.ipa" Payload
+          unzip -tq "$RUNNER_TEMP/EhPandaOutput/EhPanda-dev-82728825.ipa"
           cd "$RUNNER_TEMP/EhPandaOutput"
-          shasum -a 256 EhPanda-dev-5752651c.ipa > SHA256SUMS.txt
+          shasum -a 256 EhPanda-dev-82728825.ipa > SHA256SUMS.txt
 
       - name: Upload IPA and build provenance
         uses: actions/upload-artifact@v7
         with:
-          name: EhPanda-dev-5752651c-IPA
+          name: EhPanda-dev-82728825-IPA
           path: ${{ runner.temp }}/EhPandaOutput/
           if-no-files-found: error
           retention-days: 7
@@ -111,7 +121,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: EhPanda-dev-5752651c-build-log
+          name: EhPanda-dev-82728825-build-log
           path: ${{ runner.temp }}/ehpanda-archive.log
           if-no-files-found: ignore
           retention-days: 7
+
