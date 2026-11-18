@@ -400,11 +400,12 @@ public struct ToplistsGalleriesRequest: Request {
     public let urlSession: URLSession
 
     public func response() async throws(AppError) -> (pageNumber: PageNumber, galleries: [Gallery]) {
-        let url = URLUtil.toplistsList(host: host, catIndex: catIndex, pageNum: pageNum)
+        let url = URLUtil.toplistsList(host: .ehentai, catIndex: catIndex, pageNum: pageNum)
         let (data, _) = try await fetch(URLRequest(url: url), in: urlSession)
         do {
             let document = try htmlDocument(data: data)
-            let galleries = try await galleriesWithTitles(doc: document, host: host, in: urlSession)
+            let galleries = try await galleriesWithTitles(doc: document, host: .ehentai, in: urlSession)
+                .map({ $0.toplistGallery(for: host) })
             return try parseResponse(doc: document) {
                 (Parser.parsePageNum(doc: $0), galleries)
             }
@@ -432,16 +433,31 @@ public struct MoreToplistsGalleriesRequest: Request {
     public let urlSession: URLSession
 
     public func response() async throws(AppError) -> (pageNumber: PageNumber, galleries: [Gallery]) {
-        let url = URLUtil.moreToplistsList(host: host, catIndex: catIndex, pageNum: pageNum)
+        let url = URLUtil.moreToplistsList(host: .ehentai, catIndex: catIndex, pageNum: pageNum)
         let (data, _) = try await fetch(URLRequest(url: url), in: urlSession)
         do {
             let document = try htmlDocument(data: data)
-            let galleries = try await galleriesWithTitles(doc: document, host: host, in: urlSession)
+            let galleries = try await galleriesWithTitles(doc: document, host: .ehentai, in: urlSession)
+                .map({ $0.toplistGallery(for: host) })
             return try parseResponse(doc: document) {
                 (Parser.parsePageNum(doc: $0), galleries)
             }
         } catch {
             throw mapAppError(error: error)
         }
+    }
+}
+
+private extension Gallery {
+    /// Toplists come from E-Hentai; open their galleries on the user's selected host.
+    func toplistGallery(for host: GalleryHost) -> Gallery {
+        guard host == .exhentai, galleryURL != nil else { return self }
+        return Gallery(
+            gid: gid, token: token, title: title, jpnTitle: jpnTitle, rating: rating,
+            tags: tags, category: category, uploader: uploader, pageCount: pageCount,
+            postedDate: postedDate, coverURL: coverURL,
+            galleryURL: host.url.appending(path: "g").appending(path: gid).appending(path: token),
+            lastOpenDate: lastOpenDate
+        )
     }
 }

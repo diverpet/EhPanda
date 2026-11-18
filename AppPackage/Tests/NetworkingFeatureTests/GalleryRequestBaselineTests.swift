@@ -265,8 +265,8 @@ struct GalleryRequestBaselineTests {
         )
     }
 
-    @Test
-    func toplistsGalleriesRequestLocksURLAndParsing() async throws {
+    @Test(arguments: [GalleryHost.ehentai, .exhentai])
+    func toplistsGalleriesRequestLocksURLAndParsing(selectedHost: GalleryHost) async throws {
         let expectedURL = URLUtil.toplistsList(host: galleryHost, catIndex: 1, pageNum: 2)
         let (session, handle) = listSession(url: expectedURL)
         defer { cleanUp(session: session, handle: handle) }
@@ -274,7 +274,7 @@ struct GalleryRequestBaselineTests {
         let result = try await capture {
             () async throws(AppError) -> (pageNumber: PageNumber, galleries: [Gallery]) in
             try await ToplistsGalleriesRequest(
-                host: galleryHost,
+                host: selectedHost,
                 catIndex: 1,
                 pageNum: 2,
                 urlSession: session
@@ -286,10 +286,11 @@ struct GalleryRequestBaselineTests {
 
         expectList(result.0, galleries: result.1)
         expectGET(request, path: "/toplist.php", query: ["tl": "1", "p": "2"])
+        #expect(result.galleries.first?.galleryURL?.host() == selectedHost.url.host())
     }
 
-    @Test
-    func moreToplistsGalleriesRequestLocksURLAndParsing() async throws {
+    @Test(arguments: [GalleryHost.ehentai, .exhentai])
+    func moreToplistsGalleriesRequestLocksURLAndParsing(selectedHost: GalleryHost) async throws {
         let expectedURL = URLUtil.moreToplistsList(host: galleryHost, catIndex: 1, pageNum: 3)
         let (session, handle) = listSession(url: expectedURL)
         defer { cleanUp(session: session, handle: handle) }
@@ -297,7 +298,7 @@ struct GalleryRequestBaselineTests {
         let result = try await capture {
             () async throws(AppError) -> (pageNumber: PageNumber, galleries: [Gallery]) in
             try await MoreToplistsGalleriesRequest(
-                host: galleryHost,
+                host: selectedHost,
                 catIndex: 1,
                 pageNum: 3,
                 urlSession: session
@@ -309,6 +310,7 @@ struct GalleryRequestBaselineTests {
 
         expectList(result.0, galleries: result.1)
         expectGET(request, path: "/toplist.php", query: ["tl": "1", "p": "3"])
+        #expect(result.galleries.first?.galleryURL?.host() == selectedHost.url.host())
     }
 
     @Test
